@@ -67,6 +67,13 @@ _maybe_trigger_reflection() → run_reflection()
   explainer.py → mentions reflection_count + learned principles in narrative
 ```
 
+### Proven Impact (from 13 test sessions)
+- Sessions 1-5 (no learning): avg 3.2/5 — prompts used vague genre labels, "looping/unchanging" language
+- Reflection #1 at session 5: extracted "name specific instruments", "avoid looping", happy profile (energy=70, warmth=70-80)
+- Sessions 6-13 (with learning): avg 4.3/5 — prompts use specific instruments, learned slider ranges, few-shot examples
+- "excited" went from 2/5 to 5/5 after global rules stopped conflicting descriptors
+- Key mechanisms: few-shot prompt injection (top_prompts), anti-pattern avoidance (negative_examples), range-clamping (emotion_profiles)
+
 ### Key Constants
 - `REFLECTION_THRESHOLD = 5` — ratings between reflection cycles
 - Range-clamping blend: 70% toward learned boundary, 30% AI value (when outside range)

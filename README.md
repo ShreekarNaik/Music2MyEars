@@ -137,6 +137,43 @@ You rate a track (1-5) → Stored in data/feedback.json
 ### Range-Clamping (not blind overwriting)
 When the system learns that "happy" works best at energy 60-80, it doesn't force energy to 70. If the AI detects energy=75 from your input, it keeps it (within range). If the AI says energy=30, it nudges it toward 60 (nearest boundary) with a 70/30 blend: `0.3 × 30 + 0.7 × 60 = 51`. This preserves the AI's contextual judgment while benefiting from past learning.
 
+### Real Example: How It Improved Over 13 Sessions
+
+Here's what actually happened during testing:
+
+**Before learning (Sessions 1-5, no learned rules):**
+
+| Session | Emotion | Prompt style | Rating |
+|---------|---------|-------------|--------|
+| 1 | peaceful | "unchanging indie pop loop...whisper-soft light drums" | 2/5 |
+| 3 | sad | "ambient indie pop loop...light brushed drums" | 3/5 |
+| 5 | excited | "orchestral piece...bright shimmering brass" | 2/5 |
+
+Problems: prompts used vague genre labels ("indie pop loop"), repetitive words ("unchanging", "looping"), and conflicting descriptors.
+
+**Reflection #1 triggers after Session 5** — Gemini analyzes all 5 sessions and discovers:
+- "Looping/unchanging" language correlates with low ratings
+- Naming specific instruments (piano, strings) correlates with high ratings
+- Sessions 2 and 4 (rated 5/5 and 4/5) used "driving piano chords", "powerful brass", "crisp production"
+
+**After learning (Sessions 6-13, with learned rules active):**
+
+| Session | Emotion | What changed | Rating |
+|---------|---------|-------------|--------|
+| 6 | happy | Orchestrator injected Session 2's prompt as a positive example. Fuser clamped energy to 70 (learned range). | 4/5 |
+| 10 | happy | Same emotion, now with 4 data points. Prompt: "driving pop-rock...powerful piano chords, uplifting strings, crisp studio-quality production" | 5/5 |
+| 11 | joyful | System applied happy-adjacent rules. "driving percussion, soaring strings, crystalline synth melody, verse-chorus structure" | 5/5 |
+| 13 | excited | Previously 2/5 — now "explosive orchestral...massive choir, soaring brass fanfares, shimmering strings" | 5/5 |
+
+**What drove the improvement:**
+
+1. **Few-shot injection** — The orchestrator fed Session 2's high-rated prompt ("energetic pop-rock at 120 BPM, driving piano chords") into Gemini as a positive example, so new prompts followed the same pattern
+2. **Anti-pattern avoidance** — Session 1's low-rated "unchanging loop" prompt was injected as a negative example, so Gemini avoided "looping" language
+3. **Range-clamping** — Happy sessions consistently scored well at energy=70, warmth=70-80, so the fuser locked new happy sessions into that range instead of guessing
+4. **Global rules** — "Specify multiple instruments instead of genre labels" applied across all emotions, improving even first-time emotions like "joyful"
+
+**Net result:** Average rating went from **3.2/5** (sessions 1-5) to **4.3/5** (sessions 6-13).
+
 ### Viewing What's Been Learned
 - **"What I've learned" panel** on the main page shows discovered rules and emotion-specific knowledge
 - **Learning stats** appear after submitting feedback: reflection count, active rules, countdown to next cycle
