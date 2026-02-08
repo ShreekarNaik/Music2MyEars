@@ -24,7 +24,7 @@ def ask_json(prompt):
     """Send a prompt to Gemini and parse the JSON response."""
     client = _get_client()
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         contents=prompt,
     )
     return json.loads(_strip_json_fences(response.text))
@@ -46,7 +46,7 @@ def ask_json_with_image(prompt, image_bytes):
     client = _get_client()
     image = Image.open(io.BytesIO(image_bytes))
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         contents=[prompt, image],
     )
     return json.loads(_strip_json_fences(response.text))
@@ -56,7 +56,7 @@ def ask_text(prompt):
     """Send a prompt to Gemini and return raw text response."""
     client = _get_client()
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         contents=prompt,
     )
     return response.text.strip()
