@@ -8,7 +8,7 @@ from modules.emotion_fuser import fuse_emotions
 from modules.music_orchestrator import create_music_prompt
 from modules.music_generator import generate_music
 from modules.explainer import explain_music
-from modules.feedback import save_feedback, get_feedback_summary
+from modules.feedback import save_feedback, get_feedback_summary, get_learned_rules
 from st_audiorec import st_audiorec
 
 st.set_page_config(page_title="Music2MyEars", page_icon="🎵", layout="centered")
@@ -80,6 +80,31 @@ with st.expander("Advanced Options", expanded=False):
         slider_warmth = st.slider("Warmth: Warm ↔ Bright", 0, 100, defaults.get("warmth", 50))
         slider_arc = st.slider("Arc: Steady ↔ Big Build", 0, 100, defaults.get("arc", 50))
 
+# --- WHAT I'VE LEARNED ---
+rules = get_learned_rules()
+if rules.get("reflection_count", 0) > 0:
+    with st.expander("What I've learned", expanded=False):
+        global_pos = rules.get("global_rules", {}).get("positive", [])
+        global_neg = rules.get("global_rules", {}).get("negative", [])
+        emotion_profiles = rules.get("emotion_profiles", {})
+
+        if global_pos:
+            st.markdown("**What works well:**")
+            for r in global_pos:
+                st.markdown(f"- {r}")
+        if global_neg:
+            st.markdown("**What to avoid:**")
+            for r in global_neg:
+                st.markdown(f"- {r}")
+        if emotion_profiles:
+            st.markdown(f"**Emotions with specific knowledge:** {', '.join(emotion_profiles.keys())}")
+            for emo, profile in emotion_profiles.items():
+                principles = profile.get("prompt_principles", [])
+                if principles:
+                    st.markdown(f"*{emo}*: {'; '.join(principles[:2])}")
+
+        st.caption(f"Based on {rules.get('reflection_count', 0)} reflection(s) analyzing {rules.get('entries_analyzed', 0)} sessions")
+
 # --- GENERATE ---
 if st.button("Generate Music", type="primary", use_container_width=True):
     has_text = bool(text_input and text_input.strip())
@@ -146,6 +171,11 @@ if st.button("Generate Music", type="primary", use_container_width=True):
     st.session_state["music_prompt"] = music_prompt
     st.session_state["final_profile"] = final_profile
     st.session_state["audio_list"] = audio_list
+    st.session_state["gen_params"] = {
+        "max_new_tokens": DURATION_TOKENS[duration],
+        "temperature": 1.0,
+        "guidance_scale": 3.0,
+    }
 
     # --- RESULTS ---
     st.divider()
@@ -229,6 +259,7 @@ if st.button("Generate Music", type="primary", use_container_width=True):
     st.subheader("Rate this track")
     rating = st.slider("How well does this music match your feeling?", 1, 5, 3, key="rating")
     would_replay = st.toggle("Would you listen to this again?", key="replay")
+    user_note = st.text_input("Any specific feedback?", placeholder="e.g. 'Too slow for the energy I wanted'", key="user_note")
 
     if st.button("Submit Feedback"):
         save_feedback(
@@ -238,13 +269,26 @@ if st.button("Generate Music", type="primary", use_container_width=True):
             final_profile=final_profile,
             music_prompt=music_prompt,
             preferred_version=st.session_state.get("preferred_version", "N/A"),
+            gen_params=st.session_state.get("gen_params"),
+            user_note=user_note if user_note else None,
         )
         st.success("Thanks! Your feedback improves future generations.")
 
         summary = get_feedback_summary()
-        if summary and summary["total_sessions"] >= 2:
-            st.caption(
-                f"Learning from {summary['total_sessions']} sessions | "
-                f"Avg rating: {summary['avg_rating']}/5 | "
-                f"Replay rate: {summary['replay_rate']}%"
-            )
+        if summary:
+            col_s1, col_s2 = st.columns(2)
+            with col_s1:
+                st.caption(
+                    f"Learning from {summary['total_sessions']} sessions | "
+                    f"Avg rating: {summary['avg_rating']}/5 | "
+                    f"Replay rate: {summary['replay_rate']}%"
+                )
+            with col_s2:
+                if summary["reflections_completed"] > 0:
+                    st.caption(
+                        f"Reflections: {summary['reflections_completed']} | "
+                        f"Rules active: {summary['rules_active']} | "
+                        f"Emotions learned: {', '.join(summary['emotions_learned']) or 'none'}"
+                    )
+                elif summary["next_reflection_in"] > 0:
+                    st.caption(f"Next learning cycle in {summary['next_reflection_in']} more ratings")
