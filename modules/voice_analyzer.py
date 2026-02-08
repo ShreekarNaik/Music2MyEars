@@ -29,6 +29,7 @@ def analyze_voice(audio_bytes):
     if not transcript:
         return {
             "transcript": "",
+            "moods": ["neutral"],
             "mood": "neutral",
             "energy": 0.5,
             "source": "voice",
@@ -36,8 +37,12 @@ def analyze_voice(audio_bytes):
 
     prompt = f"""Analyze the following spoken transcript for its emotional content.
 Return ONLY a JSON object with these keys:
-- mood: one word describing the dominant mood
+- moods: a list of 1-3 emotion words detected (most dominant first)
+- mood: the single most dominant mood (first item from moods)
 - energy: float 0.0 to 1.0 (0=very calm, 1=very intense)
+
+Example: "I'm nervous but also kind of thrilled" →
+{{"moods": ["anxious", "excited", "hopeful"], "mood": "anxious", "energy": 0.7}}
 
 Transcript: "{transcript}"
 

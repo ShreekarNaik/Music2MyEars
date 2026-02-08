@@ -7,7 +7,7 @@ def fuse_emotions(mood_list):
     sources = [m.get("source", "unknown") for m in mood_list]
 
     mood_descriptions = "\n".join(
-        f"- Source: {m.get('source')}, Mood: {m.get('mood')}, Energy: {m.get('energy')}"
+        f"- Source: {m.get('source')}, Moods: {m.get('moods', [m.get('mood')])}, Energy: {m.get('energy')}"
         for m in mood_list
     )
 
@@ -18,16 +18,20 @@ Given these mood signals from user inputs:
 
 Produce ONE unified emotional profile as JSON:
 {{
-  "emotion": "<dominant emotion word>",
+  "emotions": ["<list of 1-3 detected emotions, most dominant first>"],
+  "emotion": "<single most dominant emotion>",
   "energy": <0-100 integer>,
-  "style": <0-100 integer, 0=lo-fi intimate, 100=cinematic epic>,
-  "warmth": <0-100 integer, 0=warm analog, 100=bright digital>,
+  "style": <0-100 integer, 0=minimal sparse, 100=cinematic epic>,
+  "warmth": <0-100 integer, 0=deep dark moody, 100=bright sparkling>,
   "arc": <0-100 integer, 0=steady constant, 100=big dramatic build>
 }}
 
 Rules:
-- A sad quiet poem → low energy, lo-fi style, warm, steady arc
-- An action photo with excited text → high energy, cinematic, bright, big build
+- Blend ALL detected emotions into the slider values, not just the dominant one
+- "sad but hopeful" → moderate energy (hope lifts it), warm style, gentle build arc
+- "angry and frustrated" → high energy, bright/harsh warmth, big build
+- "peaceful and grateful" → low energy, warm, steady arc
+- The slider values should reflect the MIX of emotions, not just the dominant one
 - Base values on the actual emotional content, not random guesses
 
 Return ONLY the JSON object."""
@@ -35,11 +39,11 @@ Return ONLY the JSON object."""
     result = ask_json(prompt)
     result["sources"] = sources
 
-    # Apply learned defaults from past feedback if available
+    # Apply learned defaults — blend with Gemini's values instead of overwriting
     learned = get_learned_defaults(result.get("emotion", ""))
     if learned:
         for key in ["energy", "style", "warmth", "arc"]:
-            if key in learned:
-                result[key] = learned[key]
+            if key in learned and key in result:
+                result[key] = round((result[key] + learned[key]) / 2)
 
     return result

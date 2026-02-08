@@ -22,7 +22,7 @@ def _save_feedback(entries):
         json.dump(entries, f, indent=2)
 
 
-def save_feedback(rating, would_replay, ai_profile, final_profile, music_prompt):
+def save_feedback(rating, would_replay, ai_profile, final_profile, music_prompt, preferred_version="N/A"):
     """Append a feedback entry."""
     entries = _load_feedback()
     entries.append({
@@ -32,6 +32,7 @@ def save_feedback(rating, would_replay, ai_profile, final_profile, music_prompt)
         "ai_profile": ai_profile,
         "final_profile": final_profile,
         "music_prompt": music_prompt,
+        "preferred_version": preferred_version,
     })
     _save_feedback(entries)
 

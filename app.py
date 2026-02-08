@@ -64,6 +64,10 @@ with col_voice:
         st.session_state["voice_transcript"] = ""
         st.rerun()
 
+# --- DURATION ---
+DURATION_TOKENS = {"5 sec": 250, "10 sec": 500, "20 sec": 1000}
+duration = st.radio("Duration", list(DURATION_TOKENS.keys()), index=0, horizontal=True)
+
 # --- ADVANCED OPTIONS ---
 with st.expander("Advanced Options", expanded=False):
     st.caption("Defaults are set by AI after analysis. Move sliders to override.")
@@ -130,7 +134,7 @@ if st.button("Generate Music", type="primary", use_container_width=True):
         music_prompt = create_music_prompt(final_profile)
 
     with st.spinner("Generating music... (this takes ~20-30s)"):
-        audio_list = generate_music(music_prompt)
+        audio_list = generate_music(music_prompt, max_new_tokens=DURATION_TOKENS[duration])
 
     # Step E: Explain
     with st.spinner("Writing the story of your music..."):
@@ -146,8 +150,9 @@ if st.button("Generate Music", type="primary", use_container_width=True):
     # --- RESULTS ---
     st.divider()
 
-    # Emotion detected
-    st.subheader(f"We sensed: {ai_profile.get('emotion', '?')}")
+    # Emotions detected
+    emotions = ai_profile.get("emotions", [ai_profile.get("emotion", "?")])
+    st.subheader(f"We sensed: {' + '.join(emotions)}")
 
     # Source badges
     sources_used = [m.get("source", "?") for m in mood_list]
@@ -165,9 +170,22 @@ if st.button("Generate Music", type="primary", use_container_width=True):
     if overrides:
         st.info(f"You adjusted: {', '.join(overrides)}")
 
-    # Audio player
-    for i, audio_bytes in enumerate(audio_list):
-        st.audio(audio_bytes, format="audio/wav")
+    # Audio player — A/B comparison
+    if len(audio_list) >= 2:
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.caption("Version A")
+            st.audio(audio_list[0], format="audio/wav")
+            st.download_button("Download A", audio_list[0], file_name="music2myears_A.wav", mime="audio/wav")
+        with col_b:
+            st.caption("Version B")
+            st.audio(audio_list[1], format="audio/wav")
+            st.download_button("Download B", audio_list[1], file_name="music2myears_B.wav", mime="audio/wav")
+        preferred = st.radio("Which version do you prefer?", ["A", "B", "No preference"], horizontal=True, key="ab_pref")
+        st.session_state["preferred_version"] = preferred
+    else:
+        st.audio(audio_list[0], format="audio/wav")
+        st.download_button("Download", audio_list[0], file_name="music2myears.wav", mime="audio/wav")
 
     # Music prompt used
     with st.expander("See the music prompt"):
@@ -219,6 +237,7 @@ if st.button("Generate Music", type="primary", use_container_width=True):
             ai_profile=ai_profile,
             final_profile=final_profile,
             music_prompt=music_prompt,
+            preferred_version=st.session_state.get("preferred_version", "N/A"),
         )
         st.success("Thanks! Your feedback improves future generations.")
 
