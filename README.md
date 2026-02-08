@@ -5,28 +5,39 @@ Turn your expression into personalized music. Describe a feeling, upload an imag
 ## How It Works
 
 1. **Input** — Text, image, or voice (or any combination)
-2. **Analyze** — AI detects emotion, mood, and energy from each input (in parallel)
-3. **Fuse** — Multiple signals merge into one emotional profile
+2. **Analyze** — AI detects multiple emotions from each input (in parallel)
+3. **Fuse** — All emotion signals blend into one profile, guided by learned knowledge
 4. **Tune** — Adjust energy, style, warmth, and arc with sliders (or let AI decide)
-5. **Generate** — A local MusicGen model creates a unique audio track
-6. **Explain** — See how your input became music, step by step
+5. **Generate** — MusicGen creates two A/B variations in a single batched call
+6. **Compare** — Listen to both versions, pick your favorite
+7. **Explain** — See how your input became music, step by step
+8. **Learn** — Your feedback trains the system to produce better results over time
 
 ## Architecture
 
 ```
 modules/
-  text_analyzer.py      # Gemini text emotion analysis
-  image_analyzer.py     # Gemini vision image emotion analysis
+  text_analyzer.py      # Gemini text → multi-emotion analysis
+  image_analyzer.py     # Gemini vision → image emotion analysis
   voice_analyzer.py     # Whisper transcription + Gemini mood analysis
-  emotion_fuser.py      # Merges multi-source moods into one profile
-  music_orchestrator.py # Converts profile into a MusicGen prompt
-  music_generator.py    # Local MusicGen (facebook/musicgen-small)
-  explainer.py          # Narrative + timeline of the creation process
-  feedback.py           # User ratings + learning loop
+  emotion_fuser.py      # Blends multi-source moods, range-clamped by learned knowledge
+  music_orchestrator.py # Converts profile into a vivid MusicGen prompt
+  music_generator.py    # Batched MusicGen — 2 variations in one forward pass
+  explainer.py          # Narrative + timeline with learning status
+  feedback.py           # Ratings, A/B preference, reflection engine
 utils/
   llm_client.py         # Gemini API helpers (text, JSON, multimodal)
 app.py                  # Streamlit UI
 ```
+
+## Key Features
+
+- **Multi-emotion detection** — Detects 1-3 emotions per input (e.g. "sad + hopeful + reflective"), blends them into slider values
+- **A/B comparison** — Two music variations generated in parallel, side-by-side playback with preference selection
+- **Reflection engine** — Every 5 ratings, AI analyzes all feedback to extract prompt rules, per-emotion slider ranges, and parameter insights
+- **Range-clamping** — Learned knowledge nudges AI values toward proven ranges without overwriting contextual judgment
+- **Download buttons** — Save your generated tracks as WAV files
+- **Multimodal parallel analysis** — Text, image, and voice analyzed simultaneously via ThreadPoolExecutor
 
 ## Setup
 
@@ -41,6 +52,9 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Install ffmpeg (required for Whisper voice transcription)
+brew install ffmpeg
 
 # Configure API key
 cp .env.example .env
@@ -66,29 +80,31 @@ streamlit run app.py
    - **Arc** — Steady loop to dramatic build-up
 
 4. **Hit "Generate Music"** — The pipeline runs:
-   - Analyzes all your inputs in parallel
-   - Fuses them into one emotional profile
+   - Analyzes all your inputs in parallel (detects multiple emotions)
+   - Fuses them into one emotional profile (guided by past learning)
    - Creates a tailored music prompt
-   - Generates audio (~20-30s on M1 Mac, first run slower due to model download)
+   - Generates two A/B variations (~30s on M1 Mac, first run slower due to model download)
 
-5. **Listen and explore** — After generation you'll see:
-   - The detected emotion and profile
-   - An audio player with your track
+5. **Listen and compare** — After generation you'll see:
+   - All detected emotions (e.g. "nostalgic + hopeful")
+   - Two audio players (Version A and B) with download buttons
+   - A preference selector (A / B / No preference)
    - The music prompt used (expandable)
    - An explainer showing how your input became music, with a Plotly pipeline chart
 
-6. **Rate the track** — Slide the rating and toggle "would listen again". Your feedback trains the system to produce better results over time
+6. **Rate and teach** — Rate the track, toggle "would listen again", and pick your preferred version. Every 5 ratings the system reflects on all feedback to improve future generations.
 
 ## Requirements
 
 - Python 3.10+
+- ffmpeg (`brew install ffmpeg`)
 - Gemini API key (get one at [Google AI Studio](https://aistudio.google.com))
 - ~2.5 GB disk space for the MusicGen model (downloads on first run)
 
 ## Tech Stack
 
 - **Streamlit** — UI
-- **Google Gemini** — Text/image emotion analysis
+- **Google Gemini 2.0 Flash** — Text/image emotion analysis, reflection engine
 - **OpenAI Whisper** — Voice transcription
 - **MusicGen** (facebook/musicgen-small) — Local music generation
 - **Plotly** — Pipeline visualization

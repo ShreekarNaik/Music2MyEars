@@ -1,5 +1,10 @@
 from utils.llm_client import ask_text
-from modules.feedback import get_top_prompts
+from modules.feedback import (
+    get_top_prompts,
+    get_negative_examples,
+    get_emotion_profile,
+    get_learned_rules,
+)
 
 
 def _map_energy(val):
@@ -34,6 +39,61 @@ def _map_arc(val):
     return "starts quiet, massive build, explosive climax, drop"
 
 
+def _build_knowledge_context(emotion):
+    """Assemble learned knowledge for injection into prompt generation."""
+    sections = []
+
+    # Positive examples (few-shot)
+    top_prompts = get_top_prompts(emotion)
+    if top_prompts:
+        sections.append(
+            "Prompts that scored well for this emotion — use as inspiration:\n"
+            + "\n".join(f'- "{p}"' for p in top_prompts[:3])
+        )
+
+    # Negative examples (anti-patterns)
+    bad_prompts = get_negative_examples(emotion)
+    if bad_prompts:
+        sections.append(
+            "Prompts that scored POORLY — AVOID these patterns:\n"
+            + "\n".join(f'- "{p}"' for p in bad_prompts[:3])
+        )
+
+    # Per-emotion principles from reflection
+    emo_profile = get_emotion_profile(emotion)
+    if emo_profile:
+        principles = emo_profile.get("prompt_principles", [])
+        if principles:
+            sections.append(
+                f"Learned principles for \"{emotion}\":\n"
+                + "\n".join(f"- {p}" for p in principles[:3])
+            )
+        anti = emo_profile.get("anti_patterns", [])
+        if anti:
+            sections.append(
+                f"Anti-patterns for \"{emotion}\" (avoid these):\n"
+                + "\n".join(f"- {a}" for a in anti[:3])
+            )
+
+    # Global rules from reflection
+    rules = get_learned_rules()
+    global_rules = rules.get("global_rules", {})
+    pos = global_rules.get("positive", [])
+    neg = global_rules.get("negative", [])
+    if pos:
+        sections.append(
+            "General rules for good music prompts:\n"
+            + "\n".join(f"- {r}" for r in pos[:3])
+        )
+    if neg:
+        sections.append(
+            "General patterns to avoid:\n"
+            + "\n".join(f"- {r}" for r in neg[:3])
+        )
+
+    return "\n\n".join(sections)
+
+
 def create_music_prompt(final_profile):
     """Convert a final_profile dict into a vivid MusicGen prompt string."""
     emotion = final_profile.get("emotion", "neutral")
@@ -42,13 +102,9 @@ def create_music_prompt(final_profile):
     warmth_desc = _map_warmth(final_profile.get("warmth", 50))
     arc_desc = _map_arc(final_profile.get("arc", 50))
 
-    # Get top-rated past prompts for few-shot learning
-    past_examples = get_top_prompts(emotion)
-    few_shot = ""
-    if past_examples:
-        few_shot = "\n\nHere are prompts that scored well for similar emotions — use them as inspiration:\n"
-        for ex in past_examples[:3]:
-            few_shot += f'- "{ex}"\n'
+    # Build knowledge context from feedback loop
+    knowledge = _build_knowledge_context(emotion)
+    knowledge_block = f"\n\n{knowledge}" if knowledge else ""
 
     prompt = f"""You are a music director creating a prompt for an AI music generator.
 
@@ -58,7 +114,7 @@ Given this emotional profile:
 - Style: {final_profile.get("style", 50)}/100 → {style_desc}
 - Warmth: {final_profile.get("warmth", 50)}/100 → {warmth_desc}
 - Arc: {final_profile.get("arc", 50)}/100 → {arc_desc}
-{few_shot}
+{knowledge_block}
 Write a vivid 2-3 sentence music generation prompt that blends ALL of these qualities naturally. Include specific instruments, tempo feel, production style, and structural arc.
 
 The listener's dominant emotion is "{emotion}" — the music should honor that feeling.
