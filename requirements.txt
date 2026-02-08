@@ -7,5 +7,6 @@ openai-whisper
 transformers
 torch
 scipy
-google-generativeai
+google-genai
 audio-recorder-streamlit
+streamlit-audiorec
