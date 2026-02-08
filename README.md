@@ -50,6 +50,35 @@ cp .env.example .env
 streamlit run app.py
 ```
 
+## How to Use
+
+1. **Open the app** — Run `streamlit run app.py` and open `http://localhost:8501` in your browser
+
+2. **Provide input** (use one or combine all three):
+   - **Text** — Type how you're feeling, describe a memory, a scene, anything
+   - **Image** — Upload a photo that captures a mood (sunset, city, old photo, etc.)
+   - **Voice** — Hit the record button, speak your feelings, then stop when done. Your speech is transcribed and shown in the text box below
+
+3. **Tweak the sliders** (optional) — Expand "Advanced Options" to adjust:
+   - **Energy** — Calm ambient to high-intensity
+   - **Style** — Minimal/sparse to epic orchestral
+   - **Warmth** — Deep and moody to bright and sparkling
+   - **Arc** — Steady loop to dramatic build-up
+
+4. **Hit "Generate Music"** — The pipeline runs:
+   - Analyzes all your inputs in parallel
+   - Fuses them into one emotional profile
+   - Creates a tailored music prompt
+   - Generates audio (~20-30s on M1 Mac, first run slower due to model download)
+
+5. **Listen and explore** — After generation you'll see:
+   - The detected emotion and profile
+   - An audio player with your track
+   - The music prompt used (expandable)
+   - An explainer showing how your input became music, with a Plotly pipeline chart
+
+6. **Rate the track** — Slide the rating and toggle "would listen again". Your feedback trains the system to produce better results over time
+
 ## Requirements
 
 - Python 3.10+

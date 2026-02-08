@@ -11,19 +11,19 @@ def _map_energy(val):
 
 
 def _map_style(val):
-    if val <= 20: return "lo-fi hip-hop, vinyl crackle, tape warble, bedroom, Rhodes piano"
-    if val <= 40: return "indie, acoustic, intimate, small-room, soft keys"
-    if val <= 60: return "polished, balanced, clean production, piano and light strings"
-    if val <= 80: return "cinematic, orchestral swell, wide stereo, dramatic, full strings"
-    return "epic orchestral, massive, soaring strings, choir, blockbuster"
+    if val <= 20: return "minimal, sparse, solo instrument, intimate bedroom recording"
+    if val <= 40: return "indie pop, clean guitar, light drums, warm synth pads"
+    if val <= 60: return "polished pop-rock, piano and strings, balanced mix, studio quality"
+    if val <= 80: return "cinematic, orchestral swell, wide stereo, dramatic full strings"
+    return "epic orchestral, massive choir, soaring brass, blockbuster soundtrack"
 
 
 def _map_warmth(val):
-    if val <= 20: return "warm analog, dark tone, round bass, vintage, tape saturation"
-    if val <= 40: return "warm, smooth, soft, muted, cozy, soft reverb"
-    if val <= 60: return "natural, balanced tone, clear"
-    if val <= 80: return "bright, crisp, shimmering, airy, sparkling"
-    return "crystalline, digital, glass-like, ultra-bright, neon"
+    if val <= 20: return "deep bass, rich low-end, dark and moody tone"
+    if val <= 40: return "warm, smooth, round tone, gentle reverb"
+    if val <= 60: return "natural, balanced tone, clear and open"
+    if val <= 80: return "bright, crisp, shimmering, airy highs"
+    return "crystalline, sparkling, ultra-bright, electronic sheen"
 
 
 def _map_arc(val):

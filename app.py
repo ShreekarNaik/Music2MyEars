@@ -9,7 +9,7 @@ from modules.music_orchestrator import create_music_prompt
 from modules.music_generator import generate_music
 from modules.explainer import explain_music
 from modules.feedback import save_feedback, get_feedback_summary
-from audio_recorder_streamlit import audio_recorder
+from st_audiorec import st_audiorec
 
 st.set_page_config(page_title="Music2MyEars", page_icon="🎵", layout="centered")
 
@@ -34,30 +34,35 @@ with col_image:
         st.image(image_file, use_container_width=True)
 
 with col_voice:
-    st.write("Speak your feelings")
-    voice_bytes_recorded = audio_recorder(
-        text="",
-        recording_color="#e74c3c",
-        neutral_color="#6c757d",
-        icon_size="2x",
-        pause_threshold=60.0,
-    )
+    st.write("Record your feelings")
+    voice_bytes_recorded = st_audiorec()
+
+    # Initialize transcript in session state
+    if "voice_transcript" not in st.session_state:
+        st.session_state["voice_transcript"] = ""
+
+    # Transcribe when new audio is recorded
     if voice_bytes_recorded:
         st.audio(voice_bytes_recorded, format="audio/wav")
         with st.spinner("Transcribing..."):
             transcript = transcribe_audio(voice_bytes_recorded)
-        if transcript:
-            st.session_state["voice_transcript"] = transcript
-        else:
-            st.session_state["voice_transcript"] = ""
+        st.session_state["voice_transcript"] = transcript if transcript else ""
+        if not transcript:
             st.warning("Couldn't pick up any words. Try again?")
-    if st.session_state.get("voice_transcript"):
-        st.text_area(
-            "What we heard",
-            value=st.session_state["voice_transcript"],
-            height=68,
-            disabled=True,
-        )
+
+    # Show transcript
+    st.text_area(
+        "What we heard",
+        value=st.session_state["voice_transcript"],
+        height=80,
+        disabled=True,
+        placeholder="Your speech will appear here...",
+    )
+
+    # Reset button
+    if st.button("Reset recording"):
+        st.session_state["voice_transcript"] = ""
+        st.rerun()
 
 # --- ADVANCED OPTIONS ---
 with st.expander("Advanced Options", expanded=False):
