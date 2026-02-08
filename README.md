@@ -100,6 +100,48 @@ streamlit run app.py
 
 7. **Rate and teach** — Rate the track, toggle "would listen again", pick your preferred version, and optionally leave a note. Every 5 ratings the system reflects on all feedback to improve future generations. Check the "What I've learned" panel to see discovered rules.
 
+## Feedback Learning Loop
+
+The system gets smarter with every rating you give. Here's how it works:
+
+### The Cycle
+```
+You rate a track (1-5) → Stored in data/feedback.json
+                              ↓
+               Every 5 ratings → Reflection Engine triggers
+                              ↓
+          Phase A: Gemini analyzes ALL feedback to find
+                   global prompt patterns (what works vs. what to avoid)
+                              ↓
+          Phase B: Per-emotion analysis — for each emotion with 2+ sessions,
+                   extracts preferred slider ranges, prompt principles,
+                   anti-patterns, and best prompt templates
+                              ↓
+          Phase C: Parameter correlation — correlates MusicGen settings
+                   (temperature, guidance_scale) with ratings
+                              ↓
+               Results saved to data/learned_rules.json
+                              ↓
+          Next generation uses learned knowledge:
+          • Emotion Fuser range-clamps sliders to proven ranges (70/30 blend)
+          • Orchestrator injects best-rated prompts as examples
+          • Orchestrator avoids patterns from low-rated sessions
+          • Explainer mentions how past learning influenced the output
+```
+
+### What It Learns (example after 10 sessions)
+- **Global rules**: "Specify multiple instruments instead of genre labels", "Avoid looping/unchanging elements"
+- **Happy profile**: Energy 70, Warmth 70-80, use bright/upbeat elements, avoid minor keys
+- **Sad profile**: Energy 20, Warmth 30-40, use minor key + clean guitar, avoid high energy
+
+### Range-Clamping (not blind overwriting)
+When the system learns that "happy" works best at energy 60-80, it doesn't force energy to 70. If the AI detects energy=75 from your input, it keeps it (within range). If the AI says energy=30, it nudges it toward 60 (nearest boundary) with a 70/30 blend: `0.3 × 30 + 0.7 × 60 = 51`. This preserves the AI's contextual judgment while benefiting from past learning.
+
+### Viewing What's Been Learned
+- **"What I've learned" panel** on the main page shows discovered rules and emotion-specific knowledge
+- **Learning stats** appear after submitting feedback: reflection count, active rules, countdown to next cycle
+- **Raw data** in `data/learned_rules.json` for full inspection
+
 ## Requirements
 
 - Python 3.10+

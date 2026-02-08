@@ -44,6 +44,35 @@ Music2MyEars — a Streamlit app that turns text, images, and voice into AI-gene
 - **Gen params tracking** — Temperature, guidance_scale, max_new_tokens saved per session for parameter correlation
 - **Learning stats display** — Shows reflection count, active rules, emotions learned, countdown to next cycle
 
+## Feedback Learning Loop — Data Flow
+
+```
+save_feedback() → data/feedback.json (append)
+       ↓ (every 5 new ratings)
+_maybe_trigger_reflection() → run_reflection()
+       ↓
+  Phase A: _format_entries_for_reflection() → Gemini → global_rules {positive[], negative[]}
+  Phase B: per emotion (needs 2+ entries) → Gemini → emotion_profiles {preferred_params, prompt_principles, anti_patterns}
+  Phase C: _compute_param_insights() → correlate gen_params with ratings → param_insights
+       ↓
+  data/learned_rules.json (overwrite)
+       ↓ (consumed on next generation)
+  emotion_fuser.py → _range_clamp() uses emotion_profiles[emotion].preferred_params
+  emotion_fuser.py → get_learned_defaults() fallback averages high-rated sessions
+  music_orchestrator.py → _build_knowledge_context() injects:
+    - get_top_prompts(emotion) → few-shot positive examples
+    - get_negative_examples(emotion) → anti-patterns
+    - get_emotion_profile(emotion) → principles + anti_patterns
+    - get_learned_rules() → global positive/negative rules
+  explainer.py → mentions reflection_count + learned principles in narrative
+```
+
+### Key Constants
+- `REFLECTION_THRESHOLD = 5` — ratings between reflection cycles
+- Range-clamping blend: 70% toward learned boundary, 30% AI value (when outside range)
+- Top/negative prompts: max 3 examples injected per category
+- Emotion profiles need 2+ sessions per emotion to be created
+
 ## Git Worktree Setup
 This project uses git worktrees for parallel Claude Code sessions:
 
