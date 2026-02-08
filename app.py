@@ -167,17 +167,31 @@ if st.button("Generate Music", type="primary", use_container_width=True):
             text_input or "", ai_profile, final_profile, overrides, music_prompt
         )
 
-    # Store for feedback
+    # Store everything in session state so results survive reruns
     st.session_state["music_prompt"] = music_prompt
     st.session_state["final_profile"] = final_profile
     st.session_state["audio_list"] = audio_list
+    st.session_state["ai_profile_result"] = ai_profile
+    st.session_state["overrides_result"] = overrides
+    st.session_state["mood_list_result"] = mood_list
+    st.session_state["explanation"] = explanation
     st.session_state["gen_params"] = {
         "max_new_tokens": DURATION_TOKENS[duration],
         "temperature": 1.0,
         "guidance_scale": 3.0,
     }
+    st.session_state["has_results"] = True
 
-    # --- RESULTS ---
+# --- RESULTS (persisted via session_state) ---
+if st.session_state.get("has_results"):
+    audio_list = st.session_state["audio_list"]
+    ai_profile = st.session_state["ai_profile_result"]
+    final_profile = st.session_state["final_profile"]
+    overrides = st.session_state["overrides_result"]
+    mood_list = st.session_state["mood_list_result"]
+    music_prompt = st.session_state["music_prompt"]
+    explanation = st.session_state["explanation"]
+
     st.divider()
 
     # Emotions detected
